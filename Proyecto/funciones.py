@@ -130,6 +130,60 @@ def importar_desde_csv(ruta_csv: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------------
+# Modificación y eliminación de registros
+# ---------------------------------------------------------------------
+
+def listar_ventas_numeradas(ventas: list[dict]) -> None:
+    """Imprime todas las ventas con un número de índice para que el usuario
+    pueda seleccionar cuál modificar o eliminar."""
+    if not ventas:
+        print("\n[!] No hay ventas registradas todavía.")
+        return
+
+    print("\n" + "-" * 60)
+    for i, v in enumerate(ventas):
+        print(f"  {i + 1}. {v['producto']} | {v['categoria']} | "
+              f"${v['precio']:.2f} x {v['cantidad']} = ${v['total_venta']:.2f}")
+    print("-" * 60)
+
+
+def eliminar_venta(ventas: list[dict], indice: int) -> list[dict]:
+    """Elimina la venta ubicada en la posición indicada (índice basado en 0).
+
+    Devuelve la lista actualizada. La validación del rango debe hacerse
+    antes de llamar a esta función.
+    """
+    venta_eliminada = ventas.pop(indice)
+    print(f"[OK] Venta de '{venta_eliminada['producto']}' eliminada correctamente.")
+    return ventas
+
+
+def modificar_venta(ventas: list[dict], indice: int,
+                    precio_texto: str, cantidad_texto: str) -> list[dict]:
+    """Actualiza el precio y la cantidad de la venta en la posición indicada.
+
+    Recalcula total_venta automáticamente. Devuelve la lista actualizada,
+    o la lista sin cambios si los nuevos datos son inválidos.
+    """
+    try:
+        precio: float = float(precio_texto)
+        cantidad: int = int(cantidad_texto)
+    except ValueError:
+        print("[X] Error: precio y cantidad deben ser valores numéricos.")
+        return ventas
+
+    if precio <= 0 or cantidad <= 0:
+        print("[!] El precio y la cantidad deben ser mayores a cero.")
+        return ventas
+
+    ventas[indice]["precio"] = round(precio, 2)
+    ventas[indice]["cantidad"] = cantidad
+    ventas[indice]["total_venta"] = round(precio * cantidad, 2)
+    print(f"[OK] Venta de '{ventas[indice]['producto']}' actualizada correctamente.")
+    return ventas
+
+
+# ---------------------------------------------------------------------
 # Análisis con pandas (indicadores)
 # ---------------------------------------------------------------------
 
