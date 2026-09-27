@@ -17,6 +17,9 @@ from funciones import (
     calcular_indicadores,
     mostrar_indicadores,
     generar_grafico,
+    listar_ventas_numeradas,
+    eliminar_venta,
+    modificar_venta,
 )
 
 RUTA_DATOS = "ventas.json"
@@ -26,11 +29,12 @@ RUTA_GRAFICO = "ventas_categoria.png"
 def mostrar_menu() -> None:
     print("\n----- ANALIZADOR DE VENTAS (TP1) -----")
     print("1. Registrar nueva venta")
-    print("2. Buscar / filtrar ventas")
-    print("3. Ver indicadores (Pandas)")
-    print("4. Generar gráfico (Matplotlib)")
-    print("5. Importar ventas desde CSV externo")
-    print("6. Salir")
+    print("2. Modificar o eliminar una venta")
+    print("3. Buscar / filtrar ventas")
+    print("4. Ver indicadores (Pandas)")
+    print("5. Generar gráfico (Matplotlib)")
+    print("6. Importar ventas desde CSV externo")
+    print("7. Salir")
 
 
 def registrar_venta(ventas: list[dict]) -> list[dict]:
@@ -70,6 +74,48 @@ def consultar_ventas(ventas: list[dict]) -> None:
         print(f" - {v['producto']} | {v['categoria']} | ${v['precio']:.2f} x {v['cantidad']} = ${v['total_venta']:.2f}")
 
 
+def gestionar_ventas(ventas: list[dict]) -> list[dict]:
+    listar_ventas_numeradas(ventas)
+    if not ventas:
+        return ventas
+
+    print("\n1. Modificar una venta")
+    print("2. Eliminar una venta")
+    sub_opcion = input("Elegí una opción: ")
+
+    if sub_opcion not in ("1", "2"):
+        print("[!] Opción no reconocida.")
+        return ventas
+
+    try:
+        numero = int(input(f"Número de venta (1 a {len(ventas)}): "))
+        indice = numero - 1
+        if indice < 0 or indice >= len(ventas):
+            print("[!] El número ingresado está fuera del rango.")
+            return ventas
+    except ValueError:
+        print("[X] Error: ingresá un número entero.")
+        return ventas
+
+    if sub_opcion == "2":
+        confirmacion = input(f"¿Seguro que querés eliminar '{ventas[indice]['producto']}'? (s/n): ")
+        if confirmacion.strip().lower() == "s":
+            ventas = eliminar_venta(ventas, indice)
+            guardar_ventas(ventas, RUTA_DATOS)
+        else:
+            print("[!] Eliminación cancelada.")
+    else:
+        print(f"Venta actual: {ventas[indice]['producto']} | "
+              f"Precio: ${ventas[indice]['precio']:.2f} | "
+              f"Cantidad: {ventas[indice]['cantidad']}")
+        nuevo_precio = input("Nuevo precio unitario: ")
+        nueva_cantidad = input("Nueva cantidad vendida: ")
+        ventas = modificar_venta(ventas, indice, nuevo_precio, nueva_cantidad)
+        guardar_ventas(ventas, RUTA_DATOS)
+
+    return ventas
+
+
 def importar_csv(ventas: list[dict]) -> list[dict]:
     ruta_csv = input("Ruta del archivo CSV a importar (ej: ventas_nuevas.csv): ").strip()
     nuevas = importar_desde_csv(ruta_csv)
@@ -92,19 +138,21 @@ def main() -> None:
         if opcion == "1":
             ventas = registrar_venta(ventas)
         elif opcion == "2":
-            consultar_ventas(ventas)
+            ventas = gestionar_ventas(ventas)
         elif opcion == "3":
+            consultar_ventas(ventas)
+        elif opcion == "4":
             indicadores = calcular_indicadores(ventas)
             mostrar_indicadores(indicadores)
-        elif opcion == "4":
-            generar_grafico(ventas, RUTA_GRAFICO)
         elif opcion == "5":
-            ventas = importar_csv(ventas)
+            generar_grafico(ventas, RUTA_GRAFICO)
         elif opcion == "6":
+            ventas = importar_csv(ventas)
+        elif opcion == "7":
             print("Cerrando el sistema...")
             break
         else:
-            print("[!] Opción no reconocida. Elegí un número del 1 al 6.")
+            print("[!] Opción no reconocida. Elegí un número del 1 al 7.")
 
 
 if __name__ == "__main__":
