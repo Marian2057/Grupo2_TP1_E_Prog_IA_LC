@@ -24,6 +24,8 @@ archivo CSV externo y generar un gráfico con la distribución de ingresos por c
 
 ## Instalación
 
+Ubicarse dentro de la carpeta Proyecto y correr los siguientes comandos:
+
 **Windows:**
 ```
 py -3.13 -m venv .venv
@@ -36,6 +38,62 @@ pip install -r requirements.txt
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+```
+
+## Posibles errores en la instalación
+
+### Versión de Python incompatible
+
+El proyecto requiere **Python 3.10 o superior**. Puedes verificar tu versión actual con:
+
+```bash
+python3 --version
+```
+
+Si tienes una versión anterior (por ejemplo, Python 3.9), recomendamos instalar una versión más reciente utilizando `uv`:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.zshrc
+
+uv python install 3.12
+```
+
+Luego, desde la raíz del proyecto, crea nuevamente el entorno virtual utilizando Python 3.12:
+
+```bash
+rm -rf .venv
+uv venv --python 3.12 .venv
+source .venv/bin/activate
+```
+
+Verifica que se esté utilizando la versión correcta:
+
+```bash
+python --version
+```
+
+El resultado debe indicar **Python 3.10 o superior**.
+
+### `pip: command not found`
+
+Si al instalar las dependencias aparece:
+
+```text
+command not found: pip
+```
+
+instala `pip` dentro del entorno virtual:
+
+```bash
+python -m ensurepip --upgrade
+python -m pip install --upgrade pip
+```
+
+Finalmente, instala las dependencias del proyecto:
+
+```bash
+python -m pip install -r requirements.txt
 ```
 
 ## Ejecución

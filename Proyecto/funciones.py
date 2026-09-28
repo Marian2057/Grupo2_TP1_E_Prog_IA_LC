@@ -9,6 +9,7 @@ de gráficos. main.py importa este módulo y arma el flujo principal.
 import json
 import os
 import csv
+import math
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -27,16 +28,63 @@ def cargar_ventas(ruta: str) -> list[dict]:
         return []
     try:
         with open(ruta, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, OSError) as error:
+            ventas = json.load(f)
+        if not isinstance(ventas, list) or any(not _estructura_venta_valida(venta) for venta in ventas):
+            print(f"[!] El archivo '{ruta}' no contiene una lista válida de ventas. Se empieza con una lista vacía.")
+            return []
+        return ventas
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as error:
         print(f"[!] No se pudo leer '{ruta}': {error}. Se empieza con una lista vacía.")
         return []
 
 
-def guardar_ventas(ventas: list[dict], ruta: str) -> None:
-    """Guarda la lista de ventas en un archivo JSON, con indentación legible."""
-    with open(ruta, "w", encoding="utf-8") as f:
-        json.dump(ventas, f, indent=4, ensure_ascii=False)
+def _estructura_venta_valida(venta: object) -> bool:
+    """Comprueba los campos y valores requeridos para una venta persistida."""
+    if not isinstance(venta, dict):
+        return False
+
+    if not all(campo in venta for campo in ("producto", "categoria", "precio", "cantidad", "total_venta")):
+        return False
+
+    producto = venta["producto"]
+    categoria = venta["categoria"]
+    precio = venta["precio"]
+    cantidad = venta["cantidad"]
+    total_venta = venta["total_venta"]
+
+    if not isinstance(producto, str) or not producto.strip():
+        return False
+    if not isinstance(categoria, str) or not categoria.strip():
+        return False
+    if isinstance(precio, bool) or not isinstance(precio, (int, float)):
+        return False
+    if isinstance(cantidad, bool) or not isinstance(cantidad, int):
+        return False
+    if isinstance(total_venta, bool) or not isinstance(total_venta, (int, float)):
+        return False
+
+    try:
+        return (
+            math.isfinite(precio)
+            and precio > 0
+            and cantidad > 0
+            and math.isfinite(total_venta)
+            and total_venta == round(precio * cantidad, 2)
+        )
+    except (OverflowError, TypeError):
+        return False
+
+
+def guardar_ventas(ventas: list[dict], ruta: str) -> bool:
+    """Guarda ventas en JSON con indentación legible y devuelve False si ocurre un error de escritura."""
+    try:
+        contenido = json.dumps(ventas, indent=4, ensure_ascii=False, allow_nan=False)
+        with open(ruta, "w", encoding="utf-8") as f:
+            f.write(contenido)
+        return True
+    except (OSError, TypeError, ValueError) as error:
+        print(f"[X] No se pudieron guardar las ventas en '{ruta}': {error}")
+        return False
 
 
 # ---------------------------------------------------------------------
@@ -60,16 +108,34 @@ def validar_venta(producto: str, categoria: str, precio_texto: str, cantidad_tex
         print("[X] Error: precio y cantidad deben ser valores numéricos.")
         return None
 
+    if not math.isfinite(precio):
+        print("[!] El precio debe ser un número finito.")
+        return None
+
     if precio <= 0 or cantidad <= 0:
         print("[!] El precio y la cantidad deben ser mayores a cero.")
+        return None
+
+    precio = round(precio, 2)
+    if precio <= 0:
+        print("[!] El precio debe ser de al menos $0.01 después del redondeo.")
+        return None
+
+    try:
+        total_venta = round(precio * cantidad, 2)
+    except OverflowError:
+        print("[!] El total de la venta excede el rango permitido.")
+        return None
+    if not math.isfinite(total_venta):
+        print("[!] El total de la venta debe ser un número finito.")
         return None
 
     return {
         "producto": producto.strip().title(),
         "categoria": categoria.strip().title(),
-        "precio": round(precio, 2),
+        "precio": precio,
         "cantidad": cantidad,
-        "total_venta": round(precio * cantidad, 2),
+        "total_venta": total_venta,
     }
 
 
@@ -113,17 +179,28 @@ def importar_desde_csv(ruta_csv: str) -> list[dict]:
 
     try:
         with open(ruta_csv, "r", encoding="utf-8", newline="") as f:
-            lector = csv.DictReader(f)
-            for fila in lector:
+            lector = csv.DictReader(f, restkey="_campos_extra")
+            campos_requeridos = {"producto", "categoria", "precio", "cantidad"}
+            if lector.fieldnames is None or not campos_requeridos.issubset(lector.fieldnames):
+                print(f"[X] El CSV debe incluir las columnas: {', '.join(sorted(campos_requeridos))}.")
+                return nuevas
+
+            for numero_fila, fila in enumerate(lector, start=2):
+                if fila.get("_campos_extra") is not None or any(
+                    fila.get(campo) is None for campo in campos_requeridos
+                ):
+                    print(f"[!] Se descarta la fila {numero_fila}: cantidad de columnas incorrecta.")
+                    continue
+
                 venta = validar_venta(
-                    fila.get("producto", ""),
-                    fila.get("categoria", ""),
-                    fila.get("precio", "0"),
-                    fila.get("cantidad", "0"),
+                    fila["producto"],
+                    fila["categoria"],
+                    fila["precio"],
+                    fila["cantidad"],
                 )
                 if venta is not None:
                     nuevas.append(venta)
-    except OSError as error:
+    except (OSError, UnicodeDecodeError, csv.Error) as error:
         print(f"[X] Error al leer el CSV: {error}")
 
     return nuevas
@@ -153,34 +230,52 @@ def eliminar_venta(ventas: list[dict], indice: int) -> list[dict]:
     Devuelve la lista actualizada. La validación del rango debe hacerse
     antes de llamar a esta función.
     """
-    venta_eliminada = ventas.pop(indice)
-    print(f"[OK] Venta de '{venta_eliminada['producto']}' eliminada correctamente.")
-    return ventas
+    ventas_actualizadas = ventas.copy()
+    ventas_actualizadas.pop(indice)
+    return ventas_actualizadas
 
 
 def modificar_venta(ventas: list[dict], indice: int,
-                    precio_texto: str, cantidad_texto: str) -> list[dict]:
+                    precio_texto: str, cantidad_texto: str) -> list[dict] | None:
     """Actualiza el precio y la cantidad de la venta en la posición indicada.
 
     Recalcula total_venta automáticamente. Devuelve la lista actualizada,
-    o la lista sin cambios si los nuevos datos son inválidos.
+    o None si los nuevos datos son inválidos.
     """
     try:
         precio: float = float(precio_texto)
         cantidad: int = int(cantidad_texto)
     except ValueError:
         print("[X] Error: precio y cantidad deben ser valores numéricos.")
-        return ventas
+        return None
+
+    if not math.isfinite(precio):
+        print("[!] El precio debe ser un número finito.")
+        return None
 
     if precio <= 0 or cantidad <= 0:
         print("[!] El precio y la cantidad deben ser mayores a cero.")
-        return ventas
+        return None
 
-    ventas[indice]["precio"] = round(precio, 2)
-    ventas[indice]["cantidad"] = cantidad
-    ventas[indice]["total_venta"] = round(precio * cantidad, 2)
-    print(f"[OK] Venta de '{ventas[indice]['producto']}' actualizada correctamente.")
-    return ventas
+    precio = round(precio, 2)
+    if precio <= 0:
+        print("[!] El precio debe ser de al menos $0.01 después del redondeo.")
+        return None
+
+    try:
+        total_venta = round(precio * cantidad, 2)
+    except OverflowError:
+        print("[!] El total de la venta excede el rango permitido.")
+        return None
+    if not math.isfinite(total_venta):
+        print("[!] El total de la venta debe ser un número finito.")
+        return None
+
+    ventas_actualizadas = [venta.copy() for venta in ventas]
+    ventas_actualizadas[indice]["precio"] = precio
+    ventas_actualizadas[indice]["cantidad"] = cantidad
+    ventas_actualizadas[indice]["total_venta"] = total_venta
+    return ventas_actualizadas
 
 
 # ---------------------------------------------------------------------
