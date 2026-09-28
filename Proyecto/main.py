@@ -45,9 +45,10 @@ def registrar_venta(ventas: list[dict]) -> list[dict]:
 
     venta = validar_venta(producto, categoria, precio, cantidad)
     if venta is not None:
-        ventas = agregar_venta(ventas, venta)
-        guardar_ventas(ventas, RUTA_DATOS)
-        print("[OK] Venta registrada y guardada.")
+        ventas_actualizadas = agregar_venta(ventas.copy(), venta)
+        if guardar_ventas(ventas_actualizadas, RUTA_DATOS):
+            ventas = ventas_actualizadas
+            print("[OK] Venta registrada y guardada.")
     return ventas
 
 
@@ -100,8 +101,12 @@ def gestionar_ventas(ventas: list[dict]) -> list[dict]:
     if sub_opcion == "2":
         confirmacion = input(f"¿Seguro que querés eliminar '{ventas[indice]['producto']}'? (s/n): ")
         if confirmacion.strip().lower() == "s":
-            ventas = eliminar_venta(ventas, indice)
-            guardar_ventas(ventas, RUTA_DATOS)
+            ventas_actualizadas = eliminar_venta(ventas, indice)
+            if guardar_ventas(ventas_actualizadas, RUTA_DATOS):
+                print(f"[OK] Venta de '{ventas[indice]['producto']}' eliminada correctamente.")
+                ventas = ventas_actualizadas
+            else:
+                print("[!] No se eliminó la venta porque no se pudo guardar el archivo.")
         else:
             print("[!] Eliminación cancelada.")
     else:
@@ -110,8 +115,13 @@ def gestionar_ventas(ventas: list[dict]) -> list[dict]:
               f"Cantidad: {ventas[indice]['cantidad']}")
         nuevo_precio = input("Nuevo precio unitario: ")
         nueva_cantidad = input("Nueva cantidad vendida: ")
-        ventas = modificar_venta(ventas, indice, nuevo_precio, nueva_cantidad)
-        guardar_ventas(ventas, RUTA_DATOS)
+        ventas_actualizadas = modificar_venta(ventas, indice, nuevo_precio, nueva_cantidad)
+        if ventas_actualizadas is not None:
+            if guardar_ventas(ventas_actualizadas, RUTA_DATOS):
+                print(f"[OK] Venta de '{ventas[indice]['producto']}' actualizada correctamente.")
+                ventas = ventas_actualizadas
+            else:
+                print("[!] No se modificó la venta porque no se pudo guardar el archivo.")
 
     return ventas
 
@@ -120,9 +130,10 @@ def importar_csv(ventas: list[dict]) -> list[dict]:
     ruta_csv = input("Ruta del archivo CSV a importar (ej: ventas_nuevas.csv): ").strip()
     nuevas = importar_desde_csv(ruta_csv)
     if nuevas:
-        ventas.extend(nuevas)
-        guardar_ventas(ventas, RUTA_DATOS)
-        print(f"[OK] Se importaron {len(nuevas)} ventas nuevas desde '{ruta_csv}'.")
+        ventas_actualizadas = ventas + nuevas
+        if guardar_ventas(ventas_actualizadas, RUTA_DATOS):
+            ventas = ventas_actualizadas
+            print(f"[OK] Se importaron {len(nuevas)} ventas nuevas desde '{ruta_csv}'.")
     else:
         print("[!] No se importó ninguna venta válida.")
     return ventas
