@@ -14,7 +14,7 @@ archivo CSV externo y generar un gráfico con la distribución de ingresos por c
 | Archivo | Contenido |
 |---|---|
 | `main.py` | Menú por consola y flujo principal de la aplicación. |
-| `funciones.py` | Funciones propias: persistencia, validación, búsqueda, indicadores y gráfico. |
+| `funciones.py` | Funciones propias: persistencia, validación, búsqueda, modificación/eliminación, indicadores y gráfico. |
 | `analisis.ipynb` | Exploración de los datos con pandas, gráficos y conclusiones. |
 | `ventas.json` | Datos persistidos de las ventas (se crea/actualiza automáticamente). |
 | `ventas_nuevas.csv` | Archivo externo de ejemplo para probar la importación (incluye una fila inválida a propósito, para ver la validación en acción). |
@@ -102,7 +102,7 @@ python -m pip install -r requirements.txt
 python main.py
 ```
 
-El programa muestra un menú con 6 opciones: registrar venta, buscar/filtrar, ver
+El programa muestra un menú con 7 opciones: registrar venta, buscar/filtrar, modificar/eliminar venta, ver
 indicadores, generar gráfico, importar CSV y salir.
 
 Para ver el análisis exploratorio, abrir `analisis.ipynb` con Jupyter:
@@ -128,12 +128,12 @@ jupyter notebook analisis.ipynb
   de ventas y usa `sum()`, `mean()` y `groupby().idxmax()` para obtener los indicadores,
   evitando bucles manuales.
 - **Gráfico con matplotlib**: se generan ingresos por categoría en un gráfico de barras,
-  tanto desde `main.py` (opción 4) como desde el notebook.
+  tanto desde `main.py` (opción 5) como desde el notebook.
 
 ## Cómo se comprobó que el código funciona
 
 - Se ejecutó `main.py` de punta a punta probando cada opción del menú (registrar venta con
-  datos válidos e inválidos, buscar por producto, filtrar por categoría, calcular
+  datos válidos e inválidos, buscar por producto, filtrar por categoría, modificar y eliminar ventas por ID, calcular
   indicadores, generar el gráfico e importar el CSV de ejemplo).
 - Se verificó que los datos ingresados persisten correctamente reabriendo `ventas.json`
   después de cerrar y volver a ejecutar el programa.
