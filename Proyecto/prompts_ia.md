@@ -1,8 +1,9 @@
 # Registro de uso de IA - TP1
 
 Se utilizó IA como asistencia durante el desarrollo, siguiendo la metodología de
-"Explicar, Planificar y Modificar". A continuación se documentan los tres prompts
-más relevantes.
+"Explicar, Planificar y Modificar". A continuación se documentan los prompts más
+relevantes y decisivos del proyecto, incluyendo la revisión final, la validación de
+robustez y las pruebas de regresión.
 
 ---
 
@@ -56,9 +57,82 @@ programa."
 
 ---
 
+### Prompt 4 — Revisión de requisitos y cobertura funcional
+
+**Prompt:** "Revisá el proyecto completo y evaluá si cumple con los requisitos solicitados
+por la consigna. Identificá si hay faltantes funcionales, y en caso de que no los haya,
+confirmá el estado general del trabajo antes de continuar con mejoras."
+
+- **Objetivo:** validar el cumplimiento de la consigna y detectar gaps funcionales antes de
+  continuar con refuerzos de robustez.
+- **Análisis de la IA:** el programa ya cumplía con la base funcional esperada, pero se
+  identificaron mejoras necesarias en validación, manejo de errores y casos límite para que la
+  aplicación fuera más sólida y segura.
+- **Decisión:** se **tomó** como criterio de trabajo que no era necesario agregar nuevas
+  funcionalidades de negocio, sino priorizar la corrección y reforzamiento de la lógica ya
+  existente.
+
+---
+
+### Prompt 5 — Mejoras de robustez
+
+**Prompt:** "Quiero que hagas todas las mejoras de prioridad alta: rechazar números no
+finitos, validar la estructura al cargar el JSON, manejar errores al guardar y validar el
+CSV antes de importarlo."
+
+- **Objetivo:** fortalecer la estabilidad del programa ante entradas corruptas o inválidas.
+- **Respuesta de la IA:** recomendar cambios en `funciones.py` para validar finitud de
+  valores, estructura de `ventas.json`, manejo de excepciones en guardado, y validación de
+  columnas/filas del CSV.
+- **Decisión:** se **implementó** la validación reforzada y se dejó la lógica de persistencia
+  segura ante errores sin mutar el estado en memoria si el guardado fallaba.
+
+---
+
+### Prompt 6 — Pruebas de regresión y corrección de bugs
+
+**Prompt:** "Revisá los cambios del commit de 'Modificar venta' y hacé pruebas regresivas completas del proyecto. Si encontrás bugs, corregilos."
+
+- **Objetivo:** garantizar que la funcionalidad nueva no rompa el resto del sistema.
+- **Respuesta de la IA:** se detectaron problemas en la lógica de modificación y eliminación
+  cuando la operación fallaba al guardar; el estado en memoria quedaba inconsistente.
+- **Decisión:** se **corregió** para operar sobre copias temporales y persistir solo si el
+  guardado final era exitoso, evitando estados parciales o corruptos.
+
+---
+
+### Prompt 7 — Validación del flujo interactivo completo
+
+**Prompt:** "Antes de aceptar los cambios, ejecutá el flujo interactivo completo del
+programa para verificar que no haya errores y que todo funcione correctamente."
+
+- **Objetivo:** validar la experiencia de usuario real, no solo funciones aisladas.
+- **Respuesta de la IA:** se ejecutó el menú principal con datos válidos e inválidos, y se
+  comprobó que el comportamiento del flujo era consistente, incluso frente a errores de
+  entrada y guardado.
+- **Decisión:** se **aceptó** solo cuando el flujo interactivo quedó estable y sin errores de
+  ejecución.
+
+---
+
+### Prompt 8 — Documentación final y preparación para PR
+
+**Prompt:** "Quiero resumir todo lo hecho, dejarlo documentado y preparar una descripción
+final de Pull Request con los cambios clave y el estado verificado."
+
+- **Objetivo:** cerrar la entrega con documentación clara y un resumen técnico útil.
+- **Respuesta de la IA:** se preparó un resumen de mejoras, validaciones, casos borde y
+  pendientes no críticos, además de dejar el registro de prompts y el estado del README.
+- **Decisión:** se **aceptó** la documentación final como soporte del trabajo terminado y de
+  la revisión del proyecto.
+
+---
+
 ## Comprobación del funcionamiento
 
-En los tres casos, el código propuesto se probó ejecutando `main.py` con datos válidos e
-inválidos (texto en vez de números, precios negativos, campos vacíos) y revisando que
-`ventas.json` reflejara correctamente los cambios. El detalle de las pruebas realizadas
-está en la sección "Cómo se comprobó que el código funciona" del `README.md`.
+En los distintos casos del proyecto, el código propuesto se probó ejecutando `main.py`
+con datos válidos, inválidos, vacíos y de borde, revisando que `ventas.json` y los
+indicadores reflejaran correctamente cada cambio. Además, se validaron los flujos de
+modificación, eliminación, importación CSV y manejo de errores, para dejar la aplicación
+más robusta y estable. El detalle de las pruebas realizadas está en la sección "Cómo se
+comprobó que el código funciona" del `README.md`.
