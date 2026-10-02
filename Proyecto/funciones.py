@@ -101,34 +101,10 @@ def validar_venta(producto: str, categoria: str, precio_texto: str, cantidad_tex
         print("[!] Producto y categoría no pueden estar vacíos.")
         return None
 
-    try:
-        precio: float = float(precio_texto)
-        cantidad: int = int(cantidad_texto)
-    except ValueError:
-        print("[X] Error: precio y cantidad deben ser valores numéricos.")
+    resultado = _validar_precio_cantidad(precio_texto, cantidad_texto)
+    if resultado is None:
         return None
-
-    if not math.isfinite(precio):
-        print("[!] El precio debe ser un número finito.")
-        return None
-
-    if precio <= 0 or cantidad <= 0:
-        print("[!] El precio y la cantidad deben ser mayores a cero.")
-        return None
-
-    precio = round(precio, 2)
-    if precio <= 0:
-        print("[!] El precio debe ser de al menos $0.01 después del redondeo.")
-        return None
-
-    try:
-        total_venta = round(precio * cantidad, 2)
-    except OverflowError:
-        print("[!] El total de la venta excede el rango permitido.")
-        return None
-    if not math.isfinite(total_venta):
-        print("[!] El total de la venta debe ser un número finito.")
-        return None
+    precio, cantidad, total_venta = resultado
 
     return {
         "producto": producto.strip().title(),
@@ -141,8 +117,9 @@ def validar_venta(producto: str, categoria: str, precio_texto: str, cantidad_tex
 
 def agregar_venta(ventas: list[dict], venta: dict) -> list[dict]:
     """Agrega una venta ya validada a la lista y devuelve la lista actualizada."""
-    ventas.append(venta)
-    return ventas
+    nueva = list(ventas)
+    nueva.append(venta)
+    return nueva
 
 
 # ---------------------------------------------------------------------
@@ -200,6 +177,8 @@ def importar_desde_csv(ruta_csv: str) -> list[dict]:
                 )
                 if venta is not None:
                     nuevas.append(venta)
+                else:
+                    print(f"    ^ fila {numero_fila} descartada por datos inválidos.")
     except (OSError, UnicodeDecodeError, csv.Error) as error:
         print(f"[X] Error al leer el CSV: {error}")
 
@@ -235,13 +214,8 @@ def eliminar_venta(ventas: list[dict], indice: int) -> list[dict]:
     return ventas_actualizadas
 
 
-def modificar_venta(ventas: list[dict], indice: int,
-                    precio_texto: str, cantidad_texto: str) -> list[dict] | None:
-    """Actualiza el precio y la cantidad de la venta en la posición indicada.
-
-    Recalcula total_venta automáticamente. Devuelve la lista actualizada,
-    o None si los nuevos datos son inválidos.
-    """
+def _validar_precio_cantidad(precio_texto: str, cantidad_texto: str) -> tuple[float, int, float] | None:
+    """Valida y convierte precio y cantidad. Devuelve (precio, cantidad, total) o None si hay error."""
     try:
         precio: float = float(precio_texto)
         cantidad: int = int(cantidad_texto)
@@ -271,7 +245,29 @@ def modificar_venta(ventas: list[dict], indice: int,
         print("[!] El total de la venta debe ser un número finito.")
         return None
 
+    return precio, cantidad, total_venta
+
+
+def modificar_venta(ventas: list[dict], indice: int,
+                    producto: str, categoria: str,
+                    precio_texto: str, cantidad_texto: str) -> list[dict] | None:
+    """Actualiza todos los campos de la venta en la posición indicada.
+
+    Recalcula total_venta automáticamente. Devuelve la lista actualizada,
+    o None si los nuevos datos son inválidos.
+    """
+    if not producto.strip() or not categoria.strip():
+        print("[!] Producto y categoría no pueden estar vacíos.")
+        return None
+
+    resultado = _validar_precio_cantidad(precio_texto, cantidad_texto)
+    if resultado is None:
+        return None
+    precio, cantidad, total_venta = resultado
+
     ventas_actualizadas = [venta.copy() for venta in ventas]
+    ventas_actualizadas[indice]["producto"] = producto.strip().title()
+    ventas_actualizadas[indice]["categoria"] = categoria.strip().title()
     ventas_actualizadas[indice]["precio"] = precio
     ventas_actualizadas[indice]["cantidad"] = cantidad
     ventas_actualizadas[indice]["total_venta"] = total_venta
@@ -295,8 +291,15 @@ def calcular_indicadores(ventas: list[dict]) -> dict:
 
     ingresos_totales: float = float(df["total_venta"].sum())
     promedio_venta: float = float(df["total_venta"].mean())
-    producto_top: str = df.groupby("producto")["cantidad"].sum().idxmax()
-    categoria_top: str = df.groupby("categoria")["total_venta"].sum().idxmax()
+
+    cant_por_producto = df.groupby("producto")["cantidad"].sum()
+    max_cant = cant_por_producto.max()
+    producto_top: str = ", ".join(cant_por_producto[cant_por_producto == max_cant].index.tolist())
+
+    ing_por_categoria = df.groupby("categoria")["total_venta"].sum()
+    max_ing = ing_por_categoria.max()
+    categoria_top: str = ", ".join(ing_por_categoria[ing_por_categoria == max_ing].index.tolist())
+
     cantidad_operaciones: int = int(len(df))
 
     return {
@@ -348,7 +351,12 @@ def generar_grafico(ventas: list[dict], ruta_salida: str) -> bool:
     plt.ylabel("Ingresos ($)")
     plt.xticks(rotation=30, ha="right")
     plt.tight_layout()
-    plt.savefig(ruta_salida)
+    try:
+        plt.savefig(ruta_salida)
+    except OSError as error:
+        plt.close()
+        print(f"[X] No se pudo guardar el gráfico en '{ruta_salida}': {error}")
+        return False
     plt.close()
 
     print(f"\n[OK] Gráfico exportado como '{ruta_salida}'.")
