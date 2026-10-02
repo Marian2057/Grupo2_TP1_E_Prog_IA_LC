@@ -45,7 +45,7 @@ def registrar_venta(ventas: list[dict]) -> list[dict]:
 
     venta = validar_venta(producto, categoria, precio, cantidad)
     if venta is not None:
-        ventas_actualizadas = agregar_venta(ventas.copy(), venta)
+        ventas_actualizadas = agregar_venta(ventas, venta)
         if guardar_ventas(ventas_actualizadas, RUTA_DATOS):
             ventas = ventas_actualizadas
             print("[OK] Venta registrada y guardada.")
@@ -110,12 +110,13 @@ def gestionar_ventas(ventas: list[dict]) -> list[dict]:
         else:
             print("[!] Eliminación cancelada.")
     else:
-        print(f"Venta actual: {ventas[indice]['producto']} | "
-              f"Precio: ${ventas[indice]['precio']:.2f} | "
-              f"Cantidad: {ventas[indice]['cantidad']}")
-        nuevo_precio = input("Nuevo precio unitario: ")
-        nueva_cantidad = input("Nueva cantidad vendida: ")
-        ventas_actualizadas = modificar_venta(ventas, indice, nuevo_precio, nueva_cantidad)
+        venta_actual = ventas[indice]
+        print("Dejá en blanco para mantener el valor actual.")
+        nuevo_producto = input(f"Producto [{venta_actual['producto']}]: ").strip() or venta_actual['producto']
+        nueva_categoria = input(f"Categoría [{venta_actual['categoria']}]: ").strip() or venta_actual['categoria']
+        nuevo_precio = input(f"Precio unitario [{venta_actual['precio']}]: ").strip() or str(venta_actual['precio'])
+        nueva_cantidad = input(f"Cantidad [{venta_actual['cantidad']}]: ").strip() or str(venta_actual['cantidad'])
+        ventas_actualizadas = modificar_venta(ventas, indice, nuevo_producto, nueva_categoria, nuevo_precio, nueva_cantidad)
         if ventas_actualizadas is not None:
             if guardar_ventas(ventas_actualizadas, RUTA_DATOS):
                 print(f"[OK] Venta de '{ventas[indice]['producto']}' actualizada correctamente.")
