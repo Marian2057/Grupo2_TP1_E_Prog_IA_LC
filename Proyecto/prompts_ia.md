@@ -91,12 +91,20 @@ CSV antes de importarlo."
 
 ### Prompt 6 — Pruebas de regresión y corrección de bugs
 
-**Prompt:** "Revisá los cambios del commit de 'Modificar venta' y hacé pruebas regresivas completas del proyecto. Si encontrás bugs, corregilos."
+**Prompt:** "Quiero que revises los cambios agregados en el commit a7edd982be51111432693413c49a0496cdc5657f, autor gianlucadarchivio, que fue principalmente la opción de "Modificar venta", y que hagas pruebas regresivas de todas las funcionalidades del proyecto al correr "python main.py". Te listo todas las funcionalidades:
+
+Registrar nueva venta
+Modificar o eliminar una venta
+Buscar / filtrar ventas
+Ver indicadores (Pandas)
+Generar gráfico (Matplotlib)
+Importar ventas desde CSV externo
+Salir"
 
 - **Objetivo:** garantizar que la funcionalidad nueva no rompa el resto del sistema.
 - **Respuesta de la IA:** se detectaron problemas en la lógica de modificación y eliminación
   cuando la operación fallaba al guardar; el estado en memoria quedaba inconsistente.
-- **Decisión:** se **corregió** para operar sobre copias temporales y persistir solo si el
+- **Decisión:** se **corrigió** para operar sobre copias temporales y persistir solo si el
   guardado final era exitoso, evitando estados parciales o corruptos.
 
 ---
