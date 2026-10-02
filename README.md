@@ -213,5 +213,5 @@ jupyter notebook analisis.ipynb
   los gráficos coinciden con los que muestra `main.py`.
 
 ## Prompts utilizados en el proyecto
-Links prompts
+[Links prompts](https://github.com/Marian2057/Grupo2_TP1_E_Prog_IA_LC/blob/main/Proyecto/prompts_ia.md)
 
