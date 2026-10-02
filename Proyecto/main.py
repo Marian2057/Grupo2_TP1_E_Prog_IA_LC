@@ -127,6 +127,7 @@ def gestionar_ventas(ventas: list[dict]) -> list[dict]:
 
 
 def importar_csv(ventas: list[dict]) -> list[dict]:
+    print("\n[!] Asegurate de que los campos del archivo CSV estén separados por comas y que los valores con decimales se separan con punto (.)")
     ruta_csv = input("Ruta del archivo CSV a importar (ej: ventas_nuevas.csv): ").strip()
     nuevas = importar_desde_csv(ruta_csv)
     if nuevas:
